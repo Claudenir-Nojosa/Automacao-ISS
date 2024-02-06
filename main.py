@@ -11,6 +11,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import os
 import time
 import base64
+import wget
 from anticaptchaofficial.imagecaptcha import *
 from dotenv import load_dotenv
 
@@ -104,9 +105,12 @@ def acessar_contribuinte_por_linha(numero_linha):
     contribuinte.click()
 # Clicar no botão de escrituração
 def clicar_botao_escrituracao():
+    WebDriverWait(driver, 10).until(
+        EC.invisibility_of_element_located((By.ID, "alteraInscricaoForm:confirmaAlteraInscricaoAtualModalDiv"))
+    )
     botao_escrituracao = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, "//ul[@class='nav navbar-nav']/li[6]"))
-    )
+    ) 
     botao_escrituracao.click()
 # Clicar no botão de manter escrituração
 def clicar_botao_manter_escrituracao():
@@ -132,67 +136,74 @@ def mudar_mes_apuracao():
         EC.presence_of_element_located((By.XPATH, "//input[@id='manterEscrituracaoForm:btnConsultar']"))
     )
     botao_consultar.click()
+# Mudar de contribuinte
+def mudar_contribuinte(numero_linha):
+    mudar_contribuinte = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, "//div//a[@title='Alterar Inscrição Atual']"))
+    )
+    mudar_contribuinte.click()  
+    xpath_contribuinte = f"//a[@id='alteraInscricaoForm:empresaDataTable:{numero_linha}:linkNome']"
+    
+    contribuinte = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, xpath_contribuinte))
+    )
+    contribuinte.click() 
+    aceitar_troca = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, "//a[@id='alteraInscricaoForm:botaoOk']"))
+    )
+    driver.execute_script("arguments[0].click();", aceitar_troca)
+    print("Aceitei troca")
+
+    clicar_botao_escrituracao()
+    clicar_botao_manter_escrituracao()
+    mudar_mes_apuracao()
 # Entrar na apuração
 def entrar_apuracao():
-    numero_linha = 0
-    while True:
-        try:
-            # Localizar o elemento tbody com a classe rich-table-row
-            situacao_escrituracao = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, f"//td[@id='manterEscrituracaoForm:dataTable:{numero_linha + 1}:situacao']"))
+    for numero_linha in range(10):
+
+        # Localizar o elemento tbody com a classe rich-table-row
+        situacao_escrituracao = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, f"//td[@id='manterEscrituracaoForm:dataTable:1:situacao']"))
+        )
+
+        # Localizar o segundo td dentro do tbody
+        elemento_td = situacao_escrituracao.find_element(By.XPATH, f".//span[@id='manterEscrituracaoForm:dataTable:1:textoSituacao']")
+
+        # Obter o texto do elemento td
+        texto_td = elemento_td.text.strip().lower()
+        print(texto_td)
+
+        # Tomar ação com base no texto
+        if "aberta - normal" in texto_td:
+            # Relocar o elemento antes de clicar
+            entrar_escrituracao = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, f"//a[@id='manterEscrituracaoForm:dataTable:1:linkEscriturar']"))
             )
-
-            # Localizar o segundo td dentro do tbody
-            elemento_td = situacao_escrituracao.find_element(By.XPATH, f".//span[@id='manterEscrituracaoForm:dataTable:{numero_linha + 1}:textoSituacao']")
-
-            # Obter o texto do elemento td
-            texto_td = elemento_td.text.strip().lower()
-
-            # Verificar o texto e tomar ação com base nele
-            if "aberta - normal" in texto_td:
-                # Relocar o elemento antes de clicar
-                entrar_escrituracao = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.XPATH, f"//td[@id='manterEscrituracaoForm:dataTable:{numero_linha + 1}:escriturar']"))
-                )
-                driver.execute_script("arguments[0].click();", entrar_escrituracao)
-            elif "fechada - normal" in texto_td or "inscrição baixada" in texto_td:
-                mudar_contribuinte = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.XPATH, "//a[@id='j_id151:j_id153']"))
-                )
-                mudar_contribuinte.click()
-                xpath_contribuinte = f"//a[@id='alteraInscricaoForm:empresaDataTable:{numero_linha + 2}:linkNome']"
-                proximo_contribuinte = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.XPATH, xpath_contribuinte))
-                )
-                proximo_contribuinte.click()
-                aceitar_mudanca_contribuinte = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.XPATH, "//a[@id='alteraInscricaoForm:botaoOk']"))
-                )
-                aceitar_mudanca_contribuinte.click()
-
-                clicar_botao_escrituracao()
-                clicar_botao_manter_escrituracao()
-                mudar_mes_apuracao()
-
-                # Relocar o elemento antes de clicar
-                entrar_escrituracao = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.XPATH, f"//td[@id='manterEscrituracaoForm:dataTable:{numero_linha + 1}:escriturar']"))
-                )
-                entrar_escrituracao.click()
-
-            # Incrementar o número da linha para o próximo contribuinte
-            numero_linha += 1
-
-        except Exception as e:
-            print(f"Erro ao entrar na apuração: {e}")
-            break  # Encerrar o loop se houver erro ou não houver mais contribuintes
+            driver.execute_script("arguments[0].click();", entrar_escrituracao)
+        else:
+            print("Deu ruim. Mudando contribuinte.")
+            mudar_contribuinte(numero_linha + 1)
 # Aceitar serviços pendentes
 def aceitar_servicos_pendentes():
     time.sleep(2)
-    botao_servicos_pendentes = WebDriverWait(driver,50).until(
+
+    # Aguardar até que o modal de progresso esteja invisível
+    WebDriverWait(driver, 50).until(
+        EC.invisibility_of_element_located((By.XPATH, "//div[@id='mpProgressoDiv']"))
+    )
+
+    # Aguardar até que o modal esteja invisível
+    WebDriverWait(driver, 50).until(
+        EC.invisibility_of_element_located((By.XPATH, "//div[@id='modalAlertaCarregamentoDadosDiv']"))
+    )
+
+    # Clicar no botão de serviços pendentes usando JavaScript
+    botao_servicos_pendentes = WebDriverWait(driver, 50).until(
         EC.presence_of_element_located((By.XPATH, "//td[@id='aba_servicos_pendentes_lbl']"))
     )
-    botao_servicos_pendentes.click()  
+    
+    # Executar o clique usando JavaScript
+    driver.execute_script("arguments[0].click();", botao_servicos_pendentes)
     try:
         # Aguarda até que o elemento obscuro desapareça
         WebDriverWait(driver, 50).until(
@@ -202,17 +213,32 @@ def aceitar_servicos_pendentes():
         # Tenta localizar e clicar no botão original após o elemento obscuro desaparecer
         botao_aceitar_todos = WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.XPATH, "//a[@id='servicos_pendentes_form:idLinkaceitarDocTomados']"))
-        )
+        ) #servicos_pendentes_form:idLinkaceitarDocPrestados
         botao_aceitar_todos.click()
         botao_confirmar_aceitar_todos = WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.XPATH, "//input[@id='aceite_todos_doc_tomados_modal_panel_form:btnSim']"))
         )
         botao_confirmar_aceitar_todos.click()        
 
-
     except:
-        # Trata a exceção se o botão original não estiver presente
-        print("Botão 'aceitarDocTomados' não encontrado. Clicando em outro lugar.")
+        print("Botão 'aceitarDocTomados' não encontrado. Verificando 'aceitarDocPrestados'.")
+
+        try:
+            # Tenta localizar e clicar no botão DocPrestados após o elemento obscuro desaparecer
+            botao_aceitar_doc_prestados = WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.XPATH, "//a[@id='servicos_pendentes_form:idLinkaceitarDocPrestados']"))
+            )
+            # Executar o clique usando JavaScript
+            driver.execute_script("arguments[0].click();", botao_aceitar_doc_prestados)
+
+            botao_confirmar_aceitar_todos = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.XPATH, "//input[@id='aceite_todos_doc_prestados_modal_panel_form:btnSim']"))
+            )
+            botao_confirmar_aceitar_todos.click()  
+
+        except:
+            # Trata a exceção se o botão DocPrestados também não estiver presente
+            print("Nenhum dos botões 'aceitarDocTomados' ou 'aceitarDocPrestados' encontrado.")
 # Encerrar escrituração
 def encerrar_escrituracao():
     time.sleep(3)
@@ -249,7 +275,7 @@ def certificado_encerramento():
         EC.presence_of_element_located((By.XPATH, "//div[@class='footer']/a"))
     )
     # Clique no link para baixar o PDF
-    baixar_certificado.click()
+    driver.execute_script("arguments[0].click();", baixar_certificado)
 
 
 fazer_login()
@@ -261,7 +287,6 @@ entrar_apuracao()
 aceitar_servicos_pendentes()
 encerrar_escrituracao()
 certificado_encerramento()
-acessar_contribuinte_por_linha(0)
 
 
 
