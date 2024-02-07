@@ -11,7 +11,6 @@ from selenium.webdriver.support import expected_conditions as EC
 import os
 import time
 import base64
-import pyautogui
 from anticaptchaofficial.imagecaptcha import *
 from dotenv import load_dotenv
 from selenium.webdriver.common.keys import Keys
@@ -187,6 +186,11 @@ def mudar_pagina(numero_linha):
     clicar_botao_escrituracao()
     clicar_botao_manter_escrituracao()
     mudar_mes_apuracao()  
+
+    entrar_escrituracao = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, f"//a[@id='manterEscrituracaoForm:dataTable:1:linkEscriturar']"))
+    )
+    driver.execute_script("arguments[0].click();", entrar_escrituracao)
 # Entrar na apuração
 def entrar_apuracao():
     for numero_linha in range(48):
@@ -307,7 +311,6 @@ def encerrar_escrituracao():
         EC.presence_of_element_located((By.XPATH, "//input[@value='Certificado de Encerramento da Escrituração']"))
     )
     botao_certificado_encerramento.click()    
-
 # Pegar o certificado de encerramento
 def certificado_encerramento():
     # Espere até que o elemento seja visível
@@ -319,7 +322,7 @@ def certificado_encerramento():
     baixar_certificado.send_keys(Keys.ENTER)
 
 fazer_login()
-acessar_contribuinte_por_linha(9)
+acessar_contribuinte_por_linha(0)
 clicar_botao_escrituracao()
 clicar_botao_manter_escrituracao()
 mudar_mes_apuracao()
