@@ -11,9 +11,10 @@ from selenium.webdriver.support import expected_conditions as EC
 import os
 import time
 import base64
-import wget
+import pyautogui
 from anticaptchaofficial.imagecaptcha import *
 from dotenv import load_dotenv
+from selenium.webdriver.common.keys import Keys
 
 load_dotenv()
 
@@ -108,6 +109,9 @@ def clicar_botao_escrituracao():
     WebDriverWait(driver, 10).until(
         EC.invisibility_of_element_located((By.ID, "alteraInscricaoForm:confirmaAlteraInscricaoAtualModalDiv"))
     )
+    WebDriverWait(driver, 10).until(
+        EC.invisibility_of_element_located((By.ID, "alteraInscricaoModalDiv"))
+    )
     botao_escrituracao = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, "//ul[@class='nav navbar-nav']/li[6]"))
     ) 
@@ -157,9 +161,35 @@ def mudar_contribuinte(numero_linha):
     clicar_botao_escrituracao()
     clicar_botao_manter_escrituracao()
     mudar_mes_apuracao()
+# Mudar de página
+def mudar_pagina(numero_linha):
+    mudar_contribuinte = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, "//div//a[@title='Alterar Inscrição Atual']"))
+    )
+    mudar_contribuinte.click()  
+    print('mudando de pagina')
+    WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "/html/body/div[3]/div[2]/div/div[2]/table/tbody/tr[2]/td/form/div[2]/div/div[2]/span/table/tfoot/tr/td/div/table/tbody/tr/td[5]"))
+    ).click()
+
+    xpath_contribuinte = f"//a[@id='alteraInscricaoForm:empresaDataTable:{numero_linha}:linkNome']"
+    
+    contribuinte = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, xpath_contribuinte))
+    )
+    contribuinte.click() 
+    aceitar_troca = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, "//a[@id='alteraInscricaoForm:botaoOk']"))
+    )
+    driver.execute_script("arguments[0].click();", aceitar_troca)
+    print("Aceitei troca")
+
+    clicar_botao_escrituracao()
+    clicar_botao_manter_escrituracao()
+    mudar_mes_apuracao()  
 # Entrar na apuração
 def entrar_apuracao():
-    for numero_linha in range(10):
+    for numero_linha in range(48):
 
         # Localizar o elemento tbody com a classe rich-table-row
         situacao_escrituracao = WebDriverWait(driver, 10).until(
@@ -180,6 +210,12 @@ def entrar_apuracao():
                 EC.presence_of_element_located((By.XPATH, f"//a[@id='manterEscrituracaoForm:dataTable:1:linkEscriturar']"))
             )
             driver.execute_script("arguments[0].click();", entrar_escrituracao)
+        elif numero_linha == 9:
+            
+            print("Mudar de página")
+            mudar_pagina(10)
+            break
+            
         else:
             print("Deu ruim. Mudando contribuinte.")
             mudar_contribuinte(numero_linha + 1)
@@ -218,7 +254,8 @@ def aceitar_servicos_pendentes():
         botao_confirmar_aceitar_todos = WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.XPATH, "//input[@id='aceite_todos_doc_tomados_modal_panel_form:btnSim']"))
         )
-        botao_confirmar_aceitar_todos.click()        
+        botao_confirmar_aceitar_todos.click()   
+        time.sleep(4)     
 
     except:
         print("Botão 'aceitarDocTomados' não encontrado. Verificando 'aceitarDocPrestados'.")
@@ -235,12 +272,14 @@ def aceitar_servicos_pendentes():
             EC.presence_of_element_located((By.XPATH, "//input[@id='aceite_todos_doc_prestados_modal_panel_form:btnSim']"))
             )
             botao_confirmar_aceitar_todos.click()  
+            time.sleep(4)
 
         except:
             # Trata a exceção se o botão DocPrestados também não estiver presente
             print("Nenhum dos botões 'aceitarDocTomados' ou 'aceitarDocPrestados' encontrado.")
 # Encerrar escrituração
 def encerrar_escrituracao():
+
     time.sleep(3)
     botao_encerramento = WebDriverWait(driver, 50).until(
         EC.presence_of_element_located((By.XPATH, "//td[@id='abaEncerramento_lbl']"))
@@ -268,6 +307,7 @@ def encerrar_escrituracao():
         EC.presence_of_element_located((By.XPATH, "//input[@value='Certificado de Encerramento da Escrituração']"))
     )
     botao_certificado_encerramento.click()    
+
 # Pegar o certificado de encerramento
 def certificado_encerramento():
     # Espere até que o elemento seja visível
@@ -276,10 +316,10 @@ def certificado_encerramento():
     )
     # Clique no link para baixar o PDF
     driver.execute_script("arguments[0].click();", baixar_certificado)
-
+    baixar_certificado.send_keys(Keys.ENTER)
 
 fazer_login()
-acessar_contribuinte_por_linha(0)
+acessar_contribuinte_por_linha(9)
 clicar_botao_escrituracao()
 clicar_botao_manter_escrituracao()
 mudar_mes_apuracao()
@@ -287,7 +327,5 @@ entrar_apuracao()
 aceitar_servicos_pendentes()
 encerrar_escrituracao()
 certificado_encerramento()
-
-
 
 
