@@ -5,7 +5,6 @@ from selenium import webdriver
 from selenium.webdriver.firefox.service import Service
 from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import os
@@ -14,7 +13,8 @@ import base64
 import pyautogui
 from anticaptchaofficial.imagecaptcha import *
 from dotenv import load_dotenv
-from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import Select
+
 
 load_dotenv()
 
@@ -188,7 +188,6 @@ def mudar_pagina(numero_linha):
     clicar_botao_escrituracao()
     clicar_botao_manter_escrituracao()
     mudar_mes_apuracao()
-
 # Entrar na apuração
 def entrar_apuracao():
     for numero_linha in range(48):
@@ -212,7 +211,7 @@ def entrar_apuracao():
                 EC.presence_of_element_located((By.XPATH, f"//a[@id='manterEscrituracaoForm:dataTable:1:linkEscriturar']"))
             )
             driver.execute_script("arguments[0].click();", entrar_escrituracao)
-        elif 18 > numero_linha > 8 :
+        elif 18 > numero_linha > 8 and texto_td != "aberta - normal":
             
             print("Mudar de página")
             print(numero_linha, 'dentro da função entrar_apuracao, antes de mudar a página de fato')
@@ -319,6 +318,40 @@ def certificado_encerramento():
     pyautogui.write('teste bot')
     time.sleep(1)
     pyautogui.press('enter')
+
+    elemento_xpath = "/html/body/div[1]/div[2]/div[3]/div[2]/table[4]/tbody/tr[2]/td[6]"
+    elemento = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, elemento_xpath))
+    )
+
+    # Obter o texto do elemento
+    texto_elemento = elemento.text.strip()
+
+    # Tomar ação com base no valor do texto
+    if texto_elemento == '0,00':
+        print("O valor é igual a '0,00'. Não há ISS retido")
+        
+    else:
+        print(f"Há ISS Retido no valor de: {texto_elemento}, indo baixar o DAM...")
+
+        WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/form/div/div/div[2]/ul/li[7]/a'))
+        ).click()
+        WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, '//*[@id="formMenuTopo:menuRecolhimento:j_id93"]'))
+        ).click()
+
+        elemento_select = driver.find_element_by_id("comboImposto")
+        seletor = Select(elemento_select)
+        seletor.select_by_visible_text("ISS retido - Responsabilidade Tributária")
+        WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, '//input[@id="btnConsultar"]'))
+        ).click()
+        
+
+        
+        
+        
 
 fazer_login()
 acessar_contribuinte_por_linha(0)
