@@ -11,6 +11,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import os
 import time
 import base64
+import pyautogui
 from anticaptchaofficial.imagecaptcha import *
 from dotenv import load_dotenv
 from selenium.webdriver.common.keys import Keys
@@ -141,10 +142,10 @@ def mudar_mes_apuracao():
     botao_consultar.click()
 # Mudar de contribuinte
 def mudar_contribuinte(numero_linha):
-    mudar_contribuinte = WebDriverWait(driver, 10).until(
+    mudar_contribuintes = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, "//div//a[@title='Alterar Inscrição Atual']"))
     )
-    mudar_contribuinte.click()  
+    mudar_contribuintes.click()  
     xpath_contribuinte = f"//a[@id='alteraInscricaoForm:empresaDataTable:{numero_linha}:linkNome']"
     
     contribuinte = WebDriverWait(driver, 10).until(
@@ -162,11 +163,12 @@ def mudar_contribuinte(numero_linha):
     mudar_mes_apuracao()
 # Mudar de página
 def mudar_pagina(numero_linha):
-    mudar_contribuinte = WebDriverWait(driver, 10).until(
+    print(numero_linha, 'dentro da função mudar_pagina, anter de mudar a pagina de fato')
+    mudar_contribuintes = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, "//div//a[@title='Alterar Inscrição Atual']"))
     )
-    mudar_contribuinte.click()  
-    print('mudando de pagina')
+    mudar_contribuintes.click()  
+
     WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, "/html/body/div[3]/div[2]/div/div[2]/table/tbody/tr[2]/td/form/div[2]/div/div[2]/span/table/tfoot/tr/td/div/table/tbody/tr/td[5]"))
     ).click()
@@ -185,12 +187,8 @@ def mudar_pagina(numero_linha):
 
     clicar_botao_escrituracao()
     clicar_botao_manter_escrituracao()
-    mudar_mes_apuracao()  
+    mudar_mes_apuracao()
 
-    entrar_escrituracao = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, f"//a[@id='manterEscrituracaoForm:dataTable:1:linkEscriturar']"))
-    )
-    driver.execute_script("arguments[0].click();", entrar_escrituracao)
 # Entrar na apuração
 def entrar_apuracao():
     for numero_linha in range(48):
@@ -214,11 +212,11 @@ def entrar_apuracao():
                 EC.presence_of_element_located((By.XPATH, f"//a[@id='manterEscrituracaoForm:dataTable:1:linkEscriturar']"))
             )
             driver.execute_script("arguments[0].click();", entrar_escrituracao)
-        elif numero_linha == 9:
+        elif 18 > numero_linha > 8 :
             
             print("Mudar de página")
-            mudar_pagina(10)
-            break
+            print(numero_linha, 'dentro da função entrar_apuracao, antes de mudar a página de fato')
+            mudar_pagina(numero_linha + 1)
             
         else:
             print("Deu ruim. Mudando contribuinte.")
@@ -313,13 +311,14 @@ def encerrar_escrituracao():
     botao_certificado_encerramento.click()    
 # Pegar o certificado de encerramento
 def certificado_encerramento():
-    # Espere até que o elemento seja visível
-    baixar_certificado = WebDriverWait(driver, 50).until(
-        EC.presence_of_element_located((By.XPATH, "//div[@class='footer']/a"))
-    )
-    # Clique no link para baixar o PDF
-    driver.execute_script("arguments[0].click();", baixar_certificado)
-    baixar_certificado.send_keys(Keys.ENTER)
+    time.sleep(2)
+    pyautogui.hotkey('ctrl', 'p')
+    time.sleep(1)
+    pyautogui.press('enter')
+    time.sleep(1)
+    pyautogui.write('teste bot')
+    time.sleep(1)
+    pyautogui.press('enter')
 
 fazer_login()
 acessar_contribuinte_por_linha(0)
