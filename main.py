@@ -14,9 +14,27 @@ import pyautogui
 from anticaptchaofficial.imagecaptcha import *
 from dotenv import load_dotenv
 from selenium.webdriver.support.ui import Select
-
+from datetime import datetime, timedelta
 
 load_dotenv()
+data_atual = datetime.now()
+mes_anterior = data_atual - timedelta(days=30)
+meses = {
+    1: 'jan',
+    2: 'fev',
+    3: 'mar',
+    4: 'abr',
+    5: 'mai',
+    6: 'jun',
+    7: 'jul',
+    8: 'ago',
+    9: 'set',
+    10: 'out',
+    11: 'nov',
+    12: 'dez'
+}
+
+mes_anterior_nome = meses[mes_anterior.month]
 
 captcha_api_key = os.getenv("CHAVE_API")
 
@@ -129,7 +147,7 @@ def mudar_mes_apuracao():
     )
     botao_mes_inicial.click()
     mes_fechamento = WebDriverWait(driver, 10).until(
-    EC.presence_of_element_located((By.XPATH, "//div[text()='jan']"))
+    EC.presence_of_element_located((By.XPATH, f"//div[text()='{mes_anterior_nome}']"))
     )
     mes_fechamento.click()
     botao_ok = WebDriverWait(driver,10).until(
