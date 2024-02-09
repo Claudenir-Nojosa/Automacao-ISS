@@ -162,7 +162,7 @@ def mudar_contribuinte(numero_linha):
     clicar_botao_manter_escrituracao()
     mudar_mes_apuracao()
 # Mudar de página
-def mudar_pagina(numero_linha):
+def mudar_pagina(numero_linha,numero_pagina):
     print(numero_linha, 'dentro da função mudar_pagina, anter de mudar a pagina de fato')
     mudar_contribuintes = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, "//div//a[@title='Alterar Inscrição Atual']"))
@@ -170,7 +170,7 @@ def mudar_pagina(numero_linha):
     mudar_contribuintes.click()  
 
     WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, "/html/body/div[3]/div[2]/div/div[2]/table/tbody/tr[2]/td/form/div[2]/div/div[2]/span/table/tfoot/tr/td/div/table/tbody/tr/td[5]"))
+            EC.presence_of_element_located((By.XPATH, f"/html/body/div[3]/div[2]/div/div[2]/table/tbody/tr[2]/td/form/div[2]/div/div[2]/span/table/tfoot/tr/td/div/table/tbody/tr/td[{numero_pagina}]"))
     ).click()
 
     xpath_contribuinte = f"//a[@id='alteraInscricaoForm:empresaDataTable:{numero_linha}:linkNome']"
@@ -211,11 +211,17 @@ def entrar_apuracao():
                 EC.presence_of_element_located((By.XPATH, f"//a[@id='manterEscrituracaoForm:dataTable:1:linkEscriturar']"))
             )
             driver.execute_script("arguments[0].click();", entrar_escrituracao)
-        elif 18 > numero_linha > 8 and texto_td != "aberta - normal":
+        elif 19 > numero_linha > 8 and texto_td != "aberta - normal":
             
-            print("Mudar de página")
+            print("Mudar para pagina 2")
             print(numero_linha, 'dentro da função entrar_apuracao, antes de mudar a página de fato')
-            mudar_pagina(numero_linha + 1)
+            mudar_pagina(numero_linha + 1, 5)
+
+        elif 29 > numero_linha > 18 and texto_td != "aberta - normal":
+        
+            print("Mudar para pagina 3")
+            print(numero_linha, 'dentro da função entrar_apuracao, antes de mudar a página de fato')
+            mudar_pagina(numero_linha + 1, 6)
             
         else:
             print("Deu ruim. Mudando contribuinte.")
@@ -343,7 +349,7 @@ def certificado_encerramento():
 
         elemento_select = driver.find_element_by_id("comboImposto")
         seletor = Select(elemento_select)
-        seletor.select_by_visible_text("ISS retido - Responsabilidade Tributária")
+        seletor.select_by_visible_text("ISS retido - Substituição Tributária")
         WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, '//input[@id="btnConsultar"]'))
         ).click()
