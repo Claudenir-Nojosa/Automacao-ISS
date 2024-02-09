@@ -11,13 +11,23 @@ import os
 import time
 import base64
 import pyautogui
+import calendar
 from anticaptchaofficial.imagecaptcha import *
 from dotenv import load_dotenv
 from selenium.webdriver.support.ui import Select
 from datetime import datetime, timedelta
 
 load_dotenv()
+
 data_atual = datetime.now()
+primeiro_dia_mes_anterior = datetime(data_atual.year, data_atual.month, 1) - timedelta(days=1)
+primeiro_dia_mes_atual = datetime(data_atual.year, data_atual.month, 1)
+ultimo_dia_mes_anterior = primeiro_dia_mes_atual - timedelta(days=1)
+ultimo_dia_mes_anterior = ultimo_dia_mes_anterior.replace(day=calendar.monthrange(ultimo_dia_mes_anterior.year, ultimo_dia_mes_anterior.month)[1])
+
+data_formatada = primeiro_dia_mes_anterior.strftime('%d%m%Y')
+data_final_formatada = ultimo_dia_mes_anterior.strftime('%d%m%Y')
+
 mes_anterior = data_atual - timedelta(days=30)
 meses = {
     1: 'jan',
@@ -41,6 +51,16 @@ captcha_api_key = os.getenv("CHAVE_API")
 # Configuração do driver (navegador Firefox)
 driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()))
 
+# Clicar no elemento, função geral
+def clicar_elemento_se_existir(driver, xpath):
+    try:
+        elemento = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, xpath))
+        )
+        elemento.click()
+        return True
+    except:
+        return False
 # Fazer login
 def fazer_login():
     # Acessando o site e maximizando a janela
@@ -371,11 +391,108 @@ def certificado_encerramento():
         WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, '//input[@id="btnConsultar"]'))
         ).click()
-        
+# Pegar serviços tomados e prestados
+def pegar_xml_servicos():
+    quantidade_servicos_tomados = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div[2]/div[3]/div[2]/table[3]/tfoot/tr/th[2]'))
+    )
+    if quantidade_servicos_tomados > 0:
+        WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/form/div/div/div[2]/ul/li[5]/a'))
+        ).click()
+        WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="formMenuTopo:menuNfse:j_id58"]'))
+        ).click
+        WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="consultarnfseForm:opTipoRelatorio:1"]'))
+        ).click
+        WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="consultarnfseForm:abaPorCompetenciaTomador_tab_lbl"]'))
+        ).click
+        WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div[2]/div[2]/div/div/form/div[3]/div/table[1]/tbody/tr[2]/td/table/tbody/tr/td/div[1]/div/div[1]/table/tbody/tr[1]/td/label/div'))
+        ).click
+        WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, f"//table[@id='consultarnfseForm:competenciaTomadorDateEditorLayout']//td[text()='{mes_anterior_nome}']"))
+        ).click
+        WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, "/html/body/div[1]/div[2]/div[2]/div/div/form/div[3]/div/table[1]/tbody/tr[2]/td/table/tbody/tr/td/div[1]/div/div[1]/table[2]/tbody/tr/td/div/table/tbody/tr[7]/td[1]/div/span"))
+        ).click
+        WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, "//*[@id='consultarnfseForm:j_id311']"))
+        ).click
+        WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, "//*[@id='consultarnfseForm:j_id318']"))
+        ).click
+        WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, "/html/body/div[1]/div[2]/div[2]/div/div/form/div[4]/div/div/div[1]/input[3]"))
+        ).click
 
+        # Ver se tem uma segunda pagina de XML
+        xpath_segunda_pagina = '/html/body/div[1]/div[2]/div[2]/div/div/form/div[4]/div/table/tfoot/tr/td/div/table/tbody/tr/td[5]'
+
+        if clicar_elemento_se_existir(driver, xpath_segunda_pagina):
+            WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, "/html/body/div[1]/div[2]/div[2]/div/div/form/div[4]/div/table/tfoot/tr/td/div/table/tbody/tr/td[5]"))
+            ).click
+            WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, "//*[@id='consultarnfseForm:j_id318']"))
+            ).click
+            WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, "/html/body/div[1]/div[2]/div[2]/div/div/form/div[4]/div/div/div[1]/input[3]"))
+            ).click      
+            pass  
+    quantidade_servicos_prestados = WebDriverWait(10,driver).until(
+    EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div[2]/div[3]/div[2]/table[2]/tfoot/tr/th[2]'))
+    )     
+    if quantidade_servicos_prestados > 0:
+        WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/form/div/div/div[2]/ul/li[5]/a'))
+        ).click()
+        WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="formMenuTopo:menuNfse:j_id58"]'))
+        ).click
+        WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="consultarnfseForm:opTipoRelatorio:0"]'))
+        ).click
+        WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="consultarnfseForm:periodo_prestador_tab_lbl"]'))
+        ).click
+        periodo_inicial = WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="consultarnfseForm:dataInicialInputDate"]'))
+        )
+        periodo_inicial.click
+        periodo_inicial.send_keys(data_formatada)
+        periodo_final = WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="consultarnfseForm:dataFinalInputDate"]'))
+        )
+        periodo_final.click()
+        periodo_final.send_keys(data_final_formatada)
+        WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="consultarnfseForm:j_id231"]'))
+        ).click
+        WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="consultarnfseForm:j_id318"]'))
+        ).click
+        WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div[2]/div[2]/div/div/form/div[4]/div/div/div[1]/input[3]'))
+        ).click
         
-        
-        
+        # Ver se tem uma segunda pagina de XML
+        xpath_segunda_pagina = '/html/body/div[1]/div[2]/div[2]/div/div/form/div[4]/div/table/tfoot/tr/td/div/table/tbody/tr/td[5]'
+
+        if clicar_elemento_se_existir(driver, xpath_segunda_pagina):
+            WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, "/html/body/div[1]/div[2]/div[2]/div/div/form/div[4]/div/table/tfoot/tr/td/div/table/tbody/tr/td[5]"))
+            ).click
+            WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, "//*[@id='consultarnfseForm:j_id318']"))
+            ).click
+            WebDriverWait(10,driver).until(
+            EC.presence_of_element_located((By.XPATH, "/html/body/div[1]/div[2]/div[2]/div/div/form/div[4]/div/div/div[1]/input[3]"))
+            ).click      
+            pass  
+   
 
 fazer_login()
 acessar_contribuinte_por_linha(0)
@@ -386,5 +503,6 @@ entrar_apuracao()
 aceitar_servicos_pendentes()
 encerrar_escrituracao()
 certificado_encerramento()
+pegar_xml_servicos()
 
 
