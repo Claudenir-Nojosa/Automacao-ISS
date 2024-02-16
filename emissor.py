@@ -1,0 +1,1 @@
+# Esse script irá emitir as notas automaticamente
